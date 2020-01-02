@@ -5,7 +5,7 @@ Template for for [UCLA CS118 Spring 2019 Project 1]
 ## Makefile
 
 This provides a couple make targets for things.
-By default (all target), it makes the `server` and `client` executables.
+By default (all target), it makes the `server` executables.
 
 It provides a `clean` target, and `tarball` target to create the submission file as well.
 
