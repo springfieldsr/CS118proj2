@@ -17,7 +17,7 @@ You are encouraged to host your code in private repositories on [GitHub](https:/
 
 ## Provided Files
 
-`server.cpp` is the entry points for the server part of the project.
+`server.c` is the entry points for the server part of the project.
 
 ## TODO
 
