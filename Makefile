@@ -1,16 +1,18 @@
-CXX=g++
-CXXOPTIMIZE= -O2
-CXXFLAGS= -g -Wall -pthread -std=c++11 $(CXXOPTIMIZE)
+CC=gcc
+CFLAGS=-I.
+DEPS=
+OBJ=server.o
 USERID=123456789
-CLASSES=
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 all: server
-
-server: $(CLASSES)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp
+server: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS)
 
 clean:
-	rm -rf *.o *~ *.gch *.swp *.dSYM server *.tar.gz
+	rm -rf *.o server *.tar.gz
 
 dist: tarball
 tarball: clean
