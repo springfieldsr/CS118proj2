@@ -22,7 +22,7 @@ int sockfd, new_fd, pid;
 void  INThandler(int sig);
 char* parser(char* msg);
 void send_file(char* filename, int sockfd);
-char *replaceWord(char *s, char *oldW, char *newW); 
+int replace_str(char* i_str, char* i_orig, char* i_rep);
 void send_response(int sockfd, int code, char* filename, int length);
 void strip_ext(char *fname);
 
@@ -94,8 +94,10 @@ char* parser(char* msg)
 	token ++;
 
 	int* spacePtr = strstr(token, "%20");
-	if (spacePtr != NULL)
-		return replaceWord(token, "%20", " ");
+	if (spacePtr != NULL){
+		replace_str(token, "%20", " ");
+		return token;
+	}
 	else
 		return token; 
 }
@@ -138,8 +140,7 @@ void send_file(char* filename, int sockfd)
 		send(sockfd, not_found, len, 0);
 		return;
 	}
-	if (!fseek(ptr, 0, SEEK_END))
-	{
+	fseek(ptr, 0, SEEK_END);
 		long size = ftell(ptr);
 		if (size < 0)
 		{
@@ -156,49 +157,32 @@ void send_file(char* filename, int sockfd)
 		send_response(sockfd, 200, truefile, num);
 		send(sockfd, buffer, num, 0);
 		free(buffer);
-	}
 	fclose(ptr);
 	return;
 }
 
 
-char *replaceWord(char *s, char *oldW, char *newW) 
-{ 
-    char *result; 
-    int i, cnt = 0; 
-    int newWlen = strlen(newW); 
-    int oldWlen = strlen(oldW); 
-    for (i = 0; s[i] != '\0'; i++) 
-    { 
-        if (strstr(&s[i], oldW) == &s[i]) 
-        { 
-            cnt++;  
-            i += oldWlen - 1; 
-        } 
-    } 
-    result = (char *)malloc(i + cnt * (newWlen - oldWlen) + 1); 
-    i = 0; 
-    while (*s) 
-    { 
-        if (strstr(s, oldW) == s) 
-        { 
-            strcpy(&result[i], newW); 
-            i += newWlen; 
-            s += oldWlen; 
-        } 
-        else
-            result[i++] = *s++; 
-    } 
-  
-    result[i] = '\0'; 
-    return result; 
-} 
+int replace_str(char* i_str, char* i_orig, char* i_rep)
+{
+   char l_before[2024];
+   char l_after[2024];
+   char* l_p;
+   int l_origLen;
+
+   l_origLen = strlen(i_orig);
+   while (l_p = strstr(i_str, i_orig)) {
+      sprintf(l_before ,"%.*s" ,l_p - i_str ,i_str);
+      sprintf(l_after ,"%s" ,l_p + l_origLen);
+      sprintf(i_str ,"%s%s%s" ,l_before ,i_rep ,l_after);
+   }
+   return(strlen(i_str));
+}
 
 void send_response(int socket, int code, char* file_name, int file_length)
 {	
 	char *dotPos;
     char *type;
-    if ((dotPos = strrchr(file_name, '.')) != NULL){
+    if (((dotPos = strrchr(file_name, '.')) != NULL) && code != 404){
 		if (strcasecmp(dotPos, ".html") == 0)
 			type = "Content-Type: text/html\r\n";
 		else if (strcasecmp(dotPos, ".jpeg") == 0)
@@ -254,7 +238,6 @@ void send_response(int socket, int code, char* file_name, int file_length)
 	if (code == 404)
 	{
 		strcat(msg, "HTTP/1.1 404 Not Found\r\n");
-		printf("%s\n", timestamp);
 		strcat(msg, timestamp);
 		strcat(msg, server);
 		strcat(msg, type);
