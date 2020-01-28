@@ -25,6 +25,7 @@ void send_file(char* filename, int sockfd);
 int replace_str(char* i_str, char* i_orig, char* i_rep);
 void send_response(int sockfd, int code, char* filename, int length);
 void strip_ext(char *fname);
+void send_404(int sockfd, char* filename);
 
 int main(int argc, char *argv[])
 {
@@ -134,29 +135,23 @@ void send_file(char* filename, int sockfd)
 
 	if (ptr == NULL)
 	{
-		char* not_found = "<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD><BODY><H1>404 Not Found</H1><P>The requested file was not found on this server.</P></BODY></HTML>";
-		int len = strlen(not_found);
-		send_response(sockfd, 404, filename, 0);
-		send(sockfd, not_found, len, 0);
+		send_404(sockfd, filename);
 		return;
 	}
 	fseek(ptr, 0, SEEK_END);
-		long size = ftell(ptr);
-		if (size < 0)
-		{
-			char* not_found = "<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD><BODY><H1>404 Not Found</H1><P>The requested file was not found on this server.</P></BODY></HTML>";
-			int len = strlen(not_found);
-			send_response(sockfd, 404, filename, 0);
-			send(sockfd, not_found, len, 0);
-			return;	
-		}
-		fseek(ptr, 0, SEEK_SET);
-		char* buffer = malloc(sizeof(char) * (size + 1));
-		size_t num = fread(buffer, sizeof(char), size, ptr);
-		buffer[num] = '\0';
-		send_response(sockfd, 200, truefile, num);
-		send(sockfd, buffer, num, 0);
-		free(buffer);
+	long size = ftell(ptr);
+	if (size < 0)
+	{
+		send_404(sockfd, filename);
+		return;
+	}
+	fseek(ptr, 0, SEEK_SET);
+	char* buffer = malloc(sizeof(char) * (size + 1));
+	size_t num = fread(buffer, sizeof(char), size, ptr);
+	buffer[num] = '\0';
+	send_response(sockfd, 200, truefile, num);
+	send(sockfd, buffer, num, 0);
+	free(buffer);
 	fclose(ptr);
 	return;
 }
@@ -202,7 +197,7 @@ void send_response(int socket, int code, char* file_name, int file_length)
 	}
 	else
 		if (code != 404)
-			type = "Content-Type: application/octet-stream";
+			type = "Content-Type: application/octet-stream\r\n";
 		else
 			type = "Content-Type: text/html\r\n";
 	
@@ -268,4 +263,13 @@ void strip_ext(char *fname)
     if (end > fname) {
         *end = '\0';
     }
+}
+
+void send_404(int sockfd, char* filename)
+{
+	char* not_found = "<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD><BODY><H1>404 Not Found</H1><P>The requested file was not found on this server.</P></BODY></HTML>";
+	int len = strlen(not_found);
+	send_response(sockfd, 404, filename, 0);
+	send(sockfd, not_found, len, 0);
+	return;
 }
